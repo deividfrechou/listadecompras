@@ -1,595 +1,173 @@
+<!-- Versão atualizada da Lista de Compras por Voz -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Compras por Voz</title>
-    <style>
-        :root {
-            --primary-color: #2196F3;
-            --primary-dark: #1976D2;
-            --accent-color: #FF4081;
-            --text-color: #333;
-            --background-color: #f9f9f9;
-            --item-bg: #fff;
-            --shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--background-color);
-            color: var(--text-color);
-            padding: 20px;
-            max-width: 600px;
-            margin: 0 auto;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h1 {
-            color: var(--primary-color);
-            font-size: 1.8rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: #666;
-            font-size: 1rem;
-        }
-
-        .container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            flex-grow: 1;
-            margin-bottom: 80px;
-        }
-
-        .item {
-            background-color: var(--item-bg);
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .item-text {
-            flex-grow: 1;
-            font-size: 1.1rem;
-            transition: all 0.2s;
-        }
-
-        .item.completed .item-text {
-            text-decoration: line-through;
-            color: #888;
-        }
-
-        .actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .edit-btn, .delete-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            color: var(--primary-color);
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 5px;
-        }
-
-        .delete-btn {
-            color: #f44336;
-        }
-
-        .mic-container {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .voice-btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 70px;
-            height: 70px;
-            font-size: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-            z-index: 2;
-        }
-
-        .voice-btn:active {
-            transform: scale(0.95);
-        }
-
-        .voice-btn.listening {
-            background-color: #f44336;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            }
-            50% {
-                transform: scale(1.05);
-                box-shadow: 0 4px 20px rgba(244,67,54,0.5);
-            }
-            100% {
-                transform: scale(1);
-                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            }
-        }
-
-        .status {
-            text-align: center;
-            background-color: rgba(255,255,255,0.9);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 500;
-            box-shadow: var(--shadow);
-            max-width: 90%;
-            margin: 0 auto;
-            min-height: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .status.active {
-            background-color: #E3F2FD;
-            color: var(--primary-dark);
-        }
-
-        .status.error {
-            background-color: #FFEBEE;
-            color: #C62828;
-        }
-
-        .status.success {
-            background-color: #E8F5E9;
-            color: #2E7D32;
-        }
-
-        .empty-list {
-            text-align: center;
-            color: #888;
-            margin-top: 40px;
-            font-size: 1.1rem;
-            padding: 20px;
-        }
-
-        .help-text {
-            text-align: center; 
-            font-size: 0.9rem;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        /* Modal para edição */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 10;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-content {
-            background-color: white;
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-        }
-
-        .modal h2 {
-            margin-bottom: 15px;
-            color: var(--primary-color);
-        }
-
-        .modal input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .modal-btn {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .save-btn {
-            background-color: var(--primary-color);
-            color: white;
-        }
-
-        .cancel-btn {
-            background-color: #ddd;
-            color: var(--text-color);
-        }
-
-        .instructions {
-            background-color: #E3F2FD;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-
-        .instructions h3 {
-            color: var(--primary-dark);
-            margin-bottom: 8px;
-        }
-
-        .instructions p {
-            margin-bottom: 8px;
-        }
-
-        .instructions ul {
-            margin-left: 20px;
-        }
-        
-        .instructions li {
-            margin-bottom: 4px;
-        }
-
-        .browser-warning {
-            background-color: #FFF3E0;
-            color: #E65100;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 0.9rem;
-            display: none;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lista de Compras</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background: #f4f4f4; }
+    h1 { color: #2196F3; }
+    .item { background: #fff; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .completed { text-decoration: line-through; color: gray; }
+    .actions button { margin-left: 5px; }
+    .total { text-align: right; font-weight: bold; margin-top: 10px; }
+    #voice-btn { font-size: 2rem; padding: 10px; border-radius: 50%; background: #2196F3; color: white; border: none; cursor: pointer; }
+    #voice-btn.listening { background: red; animation: pulse 1.5s infinite; }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    #instructions { background: #E3F2FD; padding: 10px; border-radius: 8px; margin-bottom: 20px; }
+    .modal input { width: 100%; margin-bottom: 10px; padding: 10px; }
+    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+    .modal-content { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>Lista de Compras por Voz</h1>
-        <div class="subtitle">Adicione itens apenas falando</div>
-    </header>
+  <h1>Lista de Compras</h1>
 
-    <div class="browser-warning" id="browser-warning">
-        <strong>Atenção:</strong> Funcionalidade de voz requer Chrome ou Edge para melhor compatibilidade.
-    </div>
+  <div id="instructions">
+    <p>Toque no botão do microfone e diga o nome do item que deseja adicionar à lista.</p>
+  </div>
 
-    <div class="instructions">
-        <h3>Como usar:</h3>
-        <p>1. Toque no botão do microfone</p>
-        <p>2. Conceda permissão para usar o microfone</p>
-        <p>3. Fale o item que deseja adicionar à lista</p>
-        <p>4. Toque em um item para riscá-lo da lista</p>
-    </div>
+  <div id="list"></div>
 
-    <div class="container" id="items-container">
-        <!-- Itens da lista serão adicionados dinamicamente aqui -->
-        <div class="empty-list" id="empty-list">
-            Sua lista está vazia. Clique no botão de microfone abaixo e fale o item que deseja adicionar.
-        </div>
-    </div>
+  <div class="total" id="total-value">Total: R$ 0.00</div>
 
-    
-    <div class="total-value" id="total-value" style="text-align: right; font-weight: bold; margin-bottom: 15px; font-size: 1.2rem;">
-        Total: R$ 0.00
-    </div>
-    <div class="mic-container">
-    
-        <div class="status" id="status"></div>
-        <button class="voice-btn" id="voice-btn" title="Adicionar item por voz">
-            🎤
-        </button>
-        <div class="help-text">Toque para falar</div>
-    </div>
+  <div style="text-align: center; margin-top: 20px;">
+    <button id="voice-btn" title="Adicionar por voz">🎤</button>
+  </div>
 
-    <!-- Modal para edição -->
-    <div class="modal" id="edit-modal">
-        <div class="modal-content">
-            <h2>Editar Item</h2>
-            <input type="text" id="edit-input" placeholder="Nome do item">
-       <input type="number" id="edit-price" placeholder="Valor (R$)" step="0.01">
-            <div class="modal-actions">
-                <button class="modal-btn cancel-btn" onclick="closeModal()">Cancelar</button>
-                <button class="modal-btn save-btn" onclick="saveEdit()">Salvar</button>
-            </div>
-        </div>
+  <!-- Modal -->
+  <div class="modal" id="edit-modal">
+    <div class="modal-content">
+      <h2>Editar Item</h2>
+      <input type="text" id="edit-input" placeholder="Nome do item" />
+      <input type="number" id="edit-price" placeholder="Preço (R$)" step="0.01" />
+      <div style="text-align: right;">
+        <button onclick="closeModal()">Cancelar</button>
+        <button onclick="saveEdit()">Salvar</button>
+      </div>
     </div>
+  </div>
 
-    <script>
-        // Elementos DOM
-        const itemsContainer = document.getElementById('items-container');
-        const voiceBtn = document.getElementById('voice-btn');
-        const statusElement = document.getElementById('status');
-        const emptyListElement = document.getElementById('empty-list');
-        const editModal = document.getElementById('edit-modal');
-        const editInput = document.getElementById('edit-input');
-        const browserWarning = document.getElementById('browser-warning');
-        
-        // Variáveis para reconhecimento de voz
-        let recognition;
-        let isListening = false;
-        let currentEditingIndex = -1;
-        
-        // Lista de itens
-        let shoppingItems = JSON.parse(localStorage.getItem('shoppingItems')) || [];
-        
-        // Verifica o navegador
-        function checkBrowser() {
-            const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-            const isEdge = /Edg/.test(navigator.userAgent);
-            
-            if (!isChrome && !isEdge) {
-                browserWarning.style.display = 'block';
-            }
-        }
-        
-        // Inicializa o reconhecimento de voz
-        function initSpeechRecognition() {
-            if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                recognition = new SpeechRecognition();
-                recognition.lang = 'pt-BR';
-                recognition.continuous = false;
-                recognition.interimResults = false;
-                
-                recognition.onstart = function() {
-                    voiceBtn.classList.add('listening');
-                    isListening = true;
-                    setStatus('Ouvindo... Fale o item para adicionar', 'active');
-                };
-                
-                recognition.onresult = function(event) {
-                    const transcript = event.results[0][0].transcript;
-                    setStatus('Adicionado: ' + transcript, 'success');
-                    addItem(transcript, 0);
-                };
-                
-                recognition.onerror = function(event) {
-                    console.error('Erro no reconhecimento de voz:', event.error);
-                    if (event.error === 'not-allowed') {
-                        setStatus('Permissão negada. Clique no ícone de câmera/microfone na barra de endereços e permita o acesso.', 'error');
-                    } else if (event.error === 'no-speech') {
-                        setStatus('Nenhuma fala detectada. Tente novamente.', 'error');
-                    } else {
-                        setStatus('Erro: ' + event.error + '. Tente novamente.', 'error');
-                    }
-                    voiceBtn.classList.remove('listening');
-                    isListening = false;
-                };
-                
-                recognition.onend = function() {
-                    voiceBtn.classList.remove('listening');
-                    isListening = false;
-                };
-                
-                voiceBtn.addEventListener('click', startListening);
-            } else {
-                setStatus('Seu navegador não suporta reconhecimento de voz. Use Chrome ou Edge.', 'error');
-                voiceBtn.disabled = true;
-            }
-        }
-        
-        function startListening() {
-            try {
-                // Verifica se já está ouvindo
-                if (isListening) {
-                    recognition.stop();
-                    return;
-                }
-                
-                // Tenta iniciar o reconhecimento
-                recognition.start();
-            } catch (e) {
-                console.error('Erro ao iniciar o reconhecimento de voz:', e);
-                setStatus('Erro ao iniciar. Tente novamente.', 'error');
-            }
-        }
-        
-        function setStatus(message, type = '') {
-            statusElement.textContent = message;
-            
-            // Remove classes anteriores
-            statusElement.classList.remove('active', 'error', 'success');
-            
-            // Adiciona a classe correspondente ao tipo
-            if (type) {
-                statusElement.classList.add(type);
-            }
-            
-            // Limpa a mensagem após 5 segundos se não for um erro
-            if (type !== 'error') {
-                setTimeout(() => {
-                    statusElement.textContent = '';
-                    statusElement.classList.remove('active', 'error', 'success');
-                }, 5000);
-            }
-        }
-        
-        function addItem(text, price = 0.0) {
-            if (!text.trim()) return;
-            
-            shoppingItems.push({
-                text: text.trim(), price: price,
-                completed: false
-            });
-            
-            saveItems();
-            renderItems();
-        }
-        
-        function renderItems() {
-            // Limpa o container
-            while (itemsContainer.firstChild) {
-                itemsContainer.firstChild.remove();
-            }
-            
-            // Verifica se a lista está vazia
-            if (shoppingItems.length === 0) {
-                itemsContainer.appendChild(emptyListElement);
-                return;
-            }
-            
-            // Renderiza todos os itens
-            shoppingItems.forEach((item, index) => {
-                const itemElement = document.createElement('div');
-                itemElement.className = `item ${item.completed ? 'completed' : ''}`;
-                itemElement.onclick = () => toggleCompleted(index);
-                
-                const textSpan = document.createElement('span');
-                textSpan.className = 'item-text';
-                textSpan.textContent = item.text + ' - R$ ' + item.price.toFixed(2);
-                
-                const actionsDiv = document.createElement('div');
-                actionsDiv.className = 'actions';
-                
-                const editBtn = document.createElement('button');
-                editBtn.className = 'edit-btn';
-                editBtn.innerHTML = '✏️';
-                editBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    openEditModal(index);
-                };
-                
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'delete-btn';
-                deleteBtn.innerHTML = '🗑️';
-                deleteBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    deleteItem(index);
-                };
-                
-                actionsDiv.appendChild(editBtn);
-                actionsDiv.appendChild(deleteBtn);
-                
-                itemElement.appendChild(textSpan);
-                itemElement.appendChild(actionsDiv);
-                
-                itemsContainer.appendChild(itemElement);
-            });
-        }
-        
-        function toggleCompleted(index) {
-            shoppingItems[index].completed = !shoppingItems[index].completed;
-            saveItems();
-            renderItems();
-        }
-        
-        function openEditModal(index) {
-            currentEditingIndex = index;
-            editInput.value = shoppingItems[index].text;
-            document.getElementById('edit-price').value = shoppingItems[index].price.toFixed(2);
-            editModal.style.display = 'flex';
-            editInput.focus();
-        }
-        
-        function closeModal() {
-            editModal.style.display = 'none';
-            currentEditingIndex = -1;
-        }
-        
-        function saveEdit() {
-            const newText = editInput.value.trim();
-            if (newText && currentEditingIndex >= 0) {
-                const newPrice = parseFloat(document.getElementById('edit-price').value) || 0;
-            shoppingItems[currentEditingIndex].text = newText;
-            shoppingItems[currentEditingIndex].price = newPrice;
-                saveItems();
-                renderItems();
-            }
-            closeModal();
-        }
-        
-        function deleteItem(index) {
-            shoppingItems.splice(index, 1);
-            saveItems();
-            renderItems();
-        }
-        
-        function saveItems() {
-            localStorage.setItem('shoppingItems', JSON.stringify(shoppingItems));
-        }
-        
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', function() {
-            checkBrowser();
-            initSpeechRecognition();
-            renderItems();
-            
-            // Detecta clique fora do modal para fechá-lo
-            window.onclick = function(event) {
-                if (event.target === editModal) {
-                    closeModal();
-                }
-            };
-            
-            // Adiciona listener para tecla Enter no modal de edição
-            editInput.addEventListener('keydown', function(event) {
-                if (event.key === 'Enter') {
-                    saveEdit();
-                }
-            });
-        });
-    </script>
+  <script>
+    const listEl = document.getElementById('list');
+    const totalEl = document.getElementById('total-value');
+    const instructionsEl = document.getElementById('instructions');
+    const voiceBtn = document.getElementById('voice-btn');
+    const editModal = document.getElementById('edit-modal');
+    const editInput = document.getElementById('edit-input');
+    const editPrice = document.getElementById('edit-price');
+
+    let items = JSON.parse(localStorage.getItem('shoppingItems')) || [];
+    let currentEditingIndex = -1;
+
+    function renderList() {
+      listEl.innerHTML = '';
+      let total = 0;
+
+      if (items.length === 0) {
+        instructionsEl.style.display = 'block';
+      } else {
+        instructionsEl.style.display = 'none';
+      }
+
+      items.forEach((item, index) => {
+        total += item.price;
+
+        const div = document.createElement('div');
+        div.className = 'item' + (item.completed ? ' completed' : '');
+        div.innerHTML = `
+          <span>${item.text} - R$ ${item.price.toFixed(2)}</span>
+          <span class="actions">
+            <button onclick="toggleItem(${index})">✔️</button>
+            <button onclick="openEdit(${index})">✏️</button>
+            <button onclick="removeItem(${index})">🗑️</button>
+          </span>
+        `;
+        listEl.appendChild(div);
+      });
+
+      totalEl.textContent = 'Total: R$ ' + total.toFixed(2);
+      localStorage.setItem('shoppingItems', JSON.stringify(items));
+    }
+
+    function addItem(text, price = 0) {
+      items.push({ text, price, completed: false });
+      renderList();
+    }
+
+    function toggleItem(index) {
+      items[index].completed = !items[index].completed;
+      renderList();
+    }
+
+    function removeItem(index) {
+      items.splice(index, 1);
+      renderList();
+    }
+
+    function openEdit(index) {
+      currentEditingIndex = index;
+      editInput.value = items[index].text;
+      editPrice.value = items[index].price.toFixed(2);
+      editModal.style.display = 'flex';
+    }
+
+    function closeModal() {
+      editModal.style.display = 'none';
+    }
+
+    function saveEdit() {
+      const newText = editInput.value.trim();
+      const newPrice = parseFloat(editPrice.value) || 0;
+      if (newText && currentEditingIndex >= 0) {
+        items[currentEditingIndex].text = newText;
+        items[currentEditingIndex].price = newPrice;
+      }
+      closeModal();
+      renderList();
+    }
+
+    // Speech recognition
+    let recognition;
+    if ('webkitSpeechRecognition' in window) {
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.continuous = false;
+
+      recognition.onstart = () => {
+        voiceBtn.classList.add('listening');
+      };
+
+      recognition.onend = () => {
+        voiceBtn.classList.remove('listening');
+      };
+
+      recognition.onresult = (event) => {
+        const result = event.results[0][0].transcript;
+        addItem(result, 0);
+      };
+
+      voiceBtn.onclick = () => {
+        recognition.start();
+      };
+    } else {
+      alert('Seu navegador não suporta reconhecimento de voz.');
+      voiceBtn.disabled = true;
+    }
+
+    // Iniciar
+    renderList();
+
+    // Fechar modal clicando fora
+    window.onclick = (e) => {
+      if (e.target === editModal) closeModal();
+    };
+  </script>
 </body>
 </html>
 
-<script>
-function updateTotal() {
-    let total = shoppingItems.reduce((sum, item) => sum + (item.price || 0), 0);
-    const totalElement = document.getElementById('total-value');
-    if (totalElement) {
-        totalElement.textContent = 'Total: R$ ' + total.toFixed(2);
-    }
-}
-setInterval(updateTotal, 1000);
-</script>
