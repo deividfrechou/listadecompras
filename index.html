@@ -1,4 +1,3 @@
-<!-- Versão atualizada da Lista de Compras por Voz -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -8,9 +7,10 @@
   <style>
     body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background: #f4f4f4; }
     h1 { color: #2196F3; }
-    .item { background: #fff; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-    .completed { text-decoration: line-through; color: gray; }
-    .actions button { margin-left: 5px; }
+    .item { background: #fff; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .item span:first-child { flex: 1; }
+    .item.completed span:first-child { text-decoration: line-through; color: #888; }
+    .actions button { margin-left: 5px; cursor: pointer; background: none; border: none; font-size: 1.2rem; }
     .total { text-align: right; font-weight: bold; margin-top: 10px; }
     #voice-btn { font-size: 2rem; padding: 10px; border-radius: 50%; background: #2196F3; color: white; border: none; cursor: pointer; }
     #voice-btn.listening { background: red; animation: pulse 1.5s infinite; }
@@ -80,14 +80,28 @@
 
         const div = document.createElement('div');
         div.className = 'item' + (item.completed ? ' completed' : '');
-        div.innerHTML = `
-          <span>${item.text} - R$ ${item.price.toFixed(2)}</span>
-          <span class="actions">
-            <button onclick="toggleItem(${index})">✔️</button>
-            <button onclick="openEdit(${index})">✏️</button>
-            <button onclick="removeItem(${index})">🗑️</button>
-          </span>
-        `;
+        div.onclick = () => toggleItem(index);
+
+        const text = document.createElement('span');
+        text.textContent = `${item.text} - R$ ${item.price.toFixed(2)}`;
+
+        const actions = document.createElement('span');
+        actions.className = 'actions';
+        actions.onclick = (e) => e.stopPropagation();
+
+        const editBtn = document.createElement('button');
+        editBtn.innerHTML = '✏️';
+        editBtn.onclick = () => openEdit(index);
+
+        const delBtn = document.createElement('button');
+        delBtn.innerHTML = '🗑️';
+        delBtn.onclick = () => removeItem(index);
+
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+
+        div.appendChild(text);
+        div.appendChild(actions);
         listEl.appendChild(div);
       });
 
@@ -139,35 +153,20 @@
       recognition.lang = 'pt-BR';
       recognition.continuous = false;
 
-      recognition.onstart = () => {
-        voiceBtn.classList.add('listening');
-      };
+      recognition.onstart = () => voiceBtn.classList.add('listening');
+      recognition.onend = () => voiceBtn.classList.remove('listening');
+      recognition.onresult = (event) => addItem(event.results[0][0].transcript, 0);
 
-      recognition.onend = () => {
-        voiceBtn.classList.remove('listening');
-      };
-
-      recognition.onresult = (event) => {
-        const result = event.results[0][0].transcript;
-        addItem(result, 0);
-      };
-
-      voiceBtn.onclick = () => {
-        recognition.start();
-      };
+      voiceBtn.onclick = () => recognition.start();
     } else {
       alert('Seu navegador não suporta reconhecimento de voz.');
       voiceBtn.disabled = true;
     }
 
-    // Iniciar
     renderList();
-
-    // Fechar modal clicando fora
-    window.onclick = (e) => {
-      if (e.target === editModal) closeModal();
-    };
+    window.onclick = (e) => { if (e.target === editModal) closeModal(); };
   </script>
 </body>
 </html>
+
 
