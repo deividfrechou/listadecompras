@@ -1,170 +1,56 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Lista de Compras</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background: #f4f4f4; }
-    h1 { color: #2196F3; }
-    .item { background: #fff; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    .item span:first-child { flex: 1; }
-    .item.completed span:first-child { text-decoration: line-through; color: #888; }
-    .actions button { margin-left: 5px; cursor: pointer; background: none; border: none; font-size: 1.2rem; }
-    .total { text-align: right; font-weight: bold; margin-top: 10px; }
-    #voice-btn { font-size: 2rem; padding: 10px; border-radius: 50%; background: #2196F3; color: white; border: none; cursor: pointer; }
-    #voice-btn.listening { background: red; animation: pulse 1.5s infinite; }
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
-    }
-    #instructions { background: #E3F2FD; padding: 10px; border-radius: 8px; margin-bottom: 20px; }
-    .modal input { width: 100%; margin-bottom: 10px; padding: 10px; }
-    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-    .modal-content { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Compras</title>
+    <link rel="stylesheet" href="Layout.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <h1>Lista de Compras</h1>
-
-  <div id="instructions">
-    <p>Toque no botão do microfone e diga o nome do item que deseja adicionar à lista.</p>
-  </div>
-
-  <div id="list"></div>
-
-  <div class="total" id="total-value">Total: R$ 0.00</div>
-
-  <div style="text-align: center; margin-top: 20px;">
-    <button id="voice-btn" title="Adicionar por voz">🎤</button>
-  </div>
-
-  <!-- Modal -->
-  <div class="modal" id="edit-modal">
-    <div class="modal-content">
-      <h2>Editar Item</h2>
-      <input type="text" id="edit-input" placeholder="Nome do item" />
-      <input type="number" id="edit-price" placeholder="Preço (R$)" step="0.01" />
-      <div style="text-align: right;">
-        <button onclick="closeModal()">Cancelar</button>
-        <button onclick="saveEdit()">Salvar</button>
-      </div>
+    <div class="container">
+        <header>
+            <h1>Lista de Compras</h1>
+        </header>
+        
+        <div class="add-item-container">
+            <button id="voiceButton" class="voice-btn">
+                <i class="fas fa-microphone"></i>
+                <span>Pressione para falar</span>
+            </button>
+            <div id="voiceStatus" class="voice-status">Pronto para ouvir</div>
+            <div id="itemInput" class="item-display">O que deseja adicionar?</div>
+            <button id="addItemBtn" class="add-btn">Adicionar</button>
+        </div>
+        
+        <div class="shopping-list-container">
+            <ul id="shoppingList" class="shopping-list"></ul>
+            
+            <div class="total-container">
+                <div class="total-label">Total:</div>
+                <div id="totalAmount" class="total-amount">R$ 0,00</div>
+            </div>
+        </div>
+        
+        <div id="itemModal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2>Editar Item</h2>
+                <div class="modal-form">
+                    <div class="input-group">
+                        <label for="editItemName">Nome do Item:</label>
+                        <input type="text" id="editItemName">
+                    </div>
+                    <div class="input-group">
+                        <label for="editItemPrice">Preço (R$):</label>
+                        <input type="number" id="editItemPrice" step="0.01" min="0">
+                    </div>
+                    <button id="saveItemBtn" class="modal-btn save-btn">Salvar</button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <script>
-    const listEl = document.getElementById('list');
-    const totalEl = document.getElementById('total-value');
-    const instructionsEl = document.getElementById('instructions');
-    const voiceBtn = document.getElementById('voice-btn');
-    const editModal = document.getElementById('edit-modal');
-    const editInput = document.getElementById('edit-input');
-    const editPrice = document.getElementById('edit-price');
-
-    let items = JSON.parse(localStorage.getItem('shoppingItems')) || [];
-    let currentEditingIndex = -1;
-
-    function renderList() {
-      listEl.innerHTML = '';
-      let total = 0;
-
-      if (items.length === 0) {
-        instructionsEl.style.display = 'block';
-      } else {
-        instructionsEl.style.display = 'none';
-      }
-
-      items.forEach((item, index) => {
-        total += item.price;
-
-        const div = document.createElement('div');
-        div.className = 'item' + (item.completed ? ' completed' : '');
-        div.onclick = () => toggleItem(index);
-
-        const text = document.createElement('span');
-        text.textContent = `${item.text} - R$ ${item.price.toFixed(2)}`;
-
-        const actions = document.createElement('span');
-        actions.className = 'actions';
-        actions.onclick = (e) => e.stopPropagation();
-
-        const editBtn = document.createElement('button');
-        editBtn.innerHTML = '✏️';
-        editBtn.onclick = () => openEdit(index);
-
-        const delBtn = document.createElement('button');
-        delBtn.innerHTML = '🗑️';
-        delBtn.onclick = () => removeItem(index);
-
-        actions.appendChild(editBtn);
-        actions.appendChild(delBtn);
-
-        div.appendChild(text);
-        div.appendChild(actions);
-        listEl.appendChild(div);
-      });
-
-      totalEl.textContent = 'Total: R$ ' + total.toFixed(2);
-      localStorage.setItem('shoppingItems', JSON.stringify(items));
-    }
-
-    function addItem(text, price = 0) {
-      items.push({ text, price, completed: false });
-      renderList();
-    }
-
-    function toggleItem(index) {
-      items[index].completed = !items[index].completed;
-      renderList();
-    }
-
-    function removeItem(index) {
-      items.splice(index, 1);
-      renderList();
-    }
-
-    function openEdit(index) {
-      currentEditingIndex = index;
-      editInput.value = items[index].text;
-      editPrice.value = items[index].price.toFixed(2);
-      editModal.style.display = 'flex';
-    }
-
-    function closeModal() {
-      editModal.style.display = 'none';
-    }
-
-    function saveEdit() {
-      const newText = editInput.value.trim();
-      const newPrice = parseFloat(editPrice.value) || 0;
-      if (newText && currentEditingIndex >= 0) {
-        items[currentEditingIndex].text = newText;
-        items[currentEditingIndex].price = newPrice;
-      }
-      closeModal();
-      renderList();
-    }
-
-    // Speech recognition
-    let recognition;
-    if ('webkitSpeechRecognition' in window) {
-      recognition = new webkitSpeechRecognition();
-      recognition.lang = 'pt-BR';
-      recognition.continuous = false;
-
-      recognition.onstart = () => voiceBtn.classList.add('listening');
-      recognition.onend = () => voiceBtn.classList.remove('listening');
-      recognition.onresult = (event) => addItem(event.results[0][0].transcript, 0);
-
-      voiceBtn.onclick = () => recognition.start();
-    } else {
-      alert('Seu navegador não suporta reconhecimento de voz.');
-      voiceBtn.disabled = true;
-    }
-
-    renderList();
-    window.onclick = (e) => { if (e.target === editModal) closeModal(); };
-  </script>
+    
+    <script src="Código.js"></script>
 </body>
 </html>
