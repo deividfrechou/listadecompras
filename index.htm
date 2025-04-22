@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lista de Mercado</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 26px;
+    }
+
+    .mic-button {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      text-align: center;
+      margin-bottom: 20px;
+      user-select: none;
+    }
+
+    .mic-button:active {
+      background-color: #0056b3;
+    }
+
+    .lista {
+      list-style: none;
+      padding: 0;
+    }
+
+    .item {
+      background: #fff;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .topo {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nome {
+      font-size: 18px;
+      flex-grow: 1;
+      cursor: pointer;
+      word-break: break-word;
+    }
+
+    .nome.riscado {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
+    .botoes {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .botoes input[type="text"],
+    .botoes input[type="number"] {
+      flex: 1;
+      padding: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    .botoes button {
+      padding: 6px 10px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .edit-btn { background-color: #ffc107; color: #000; }
+    .valor-btn { background-color: #17a2b8; color: white; }
+    .del-btn { background-color: #dc3545; color: white; }
+
+    .total {
+      font-weight: bold;
+      font-size: 20px;
+      margin-top: 25px;
+      text-align: right;
+    }
+
+    @media(max-width: 600px) {
+      .botoes {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🛒 Lista de Mercado</h1>
+
+  <button class="mic-button" ontouchstart="startVoice()" ontouchend="stopVoice()" onmousedown="startVoice()" onmouseup="stopVoice()">🎤 Segure para falar</button>
+
+  <ul class="lista" id="lista"></ul>
+
+  <div class="total">Total: R$ <span id="total">0.00</span></div>
+
+  <script>
+    let recognition;
+
+    if ('webkitSpeechRecognition' in window) {
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onresult = function(event) {
+        const texto = event.results[0][0].transcript.trim();
+        if (texto) {
+          adicionarItem(texto);
+        }
+      };
+
+      recognition.onerror = function(event) {
+        console.log('Erro no reconhecimento:', event.error);
+      };
+    } else {
+      alert('Seu navegador não suporta reconhecimento de voz.');
+    }
+
+    function startVoice() {
+      if (recognition) recognition.start();
+    }
+
+    function stopVoice() {
+      if (recognition) recognition.stop();
+    }
+
+    function adicionarItem(nome) {
+      const lista = document.getElementById('lista');
+      const li = document.createElement('li');
+      li.className = 'item';
+
+      const topo = document.createElement('div');
+      topo.className = 'topo';
+
+      const span = document.createElement('span');
+      span.className = 'nome';
+      span.textContent = nome;
+      span.onclick = () => span.classList.toggle('riscado');
+
+      topo.appendChild(span);
+
+      const botoes = document.createElement('div');
+      botoes.className = 'botoes';
+
+      const inputEdit = document.createElement('input');
+      inputEdit.type = 'text';
+      inputEdit.placeholder = 'Editar nome';
+
+      const btnEdit = document.createElement('button');
+      btnEdit.className = 'edit-btn';
+      btnEdit.textContent = '✏️';
+      btnEdit.onclick = () => {
+        if (inputEdit.value.trim()) {
+          span.textContent = inputEdit.value.trim();
+          inputEdit.value = '';
+        }
+      };
+
+      const inputValor = document.createElement('input');
+      inputValor.type = 'number';
+      inputValor.placeholder = 'R$';
+      inputValor.min = '0';
+      inputValor.step = '0.01';
+      inputValor.oninput = atualizarTotal;
+
+      const btnValor = document.createElement('button');
+      btnValor.className = 'valor-btn';
+      btnValor.textContent = '💰';
+      btnValor.onclick = () => {
+        const valor = parseFloat(inputValor.value);
+        if (!isNaN(valor)) {
+          inputValor.value = valor.toFixed(2);
+          atualizarTotal();
+        }
+      };
+
+      const btnDel = document.createElement('button');
+      btnDel.className = 'del-btn';
+      btnDel.textContent = '🗑️';
+      btnDel.onclick = () => {
+        li.remove();
+        atualizarTotal();
+      };
+
+      botoes.appendChild(inputEdit);
+      botoes.appendChild(btnEdit);
+      botoes.appendChild(inputValor);
+      botoes.appendChild(btnValor);
+      botoes.appendChild(btnDel);
+
+      li.appendChild(topo);
+      li.appendChild(botoes);
+      lista.appendChild(li);
+    }
+
+    function atualizarTotal() {
+      let total = 0;
+      const inputs = document.querySelectorAll('input[type="number"]');
+      inputs.forEach(input => {
+        const val = parseFloat(input.value);
+        if (!isNaN(val)) total += val;
+      });
+      document.getElementById('total').textContent = total.toFixed(2);
+    }
+  </script>
+</body>
+</html>
